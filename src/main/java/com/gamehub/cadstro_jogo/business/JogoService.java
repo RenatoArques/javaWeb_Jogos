@@ -22,4 +22,24 @@ public class JogoService {
                 () -> new RuntimeException("nome nao encontrado")
         );
     }
+
+    public void deletarJogoPorNome(String nome){
+        repository.deleteByNome(nome);
+    }
+
+    public  void atualizarJogoPorId(Integer id, Jogo jogo){
+        Jogo jogoEntity = repository.findById(id).orElseThrow(() ->
+                new RuntimeException("Jogo nao encontrado"));
+        Jogo jogoAtualizado = Jogo.builder()
+                .nome(jogo.getNome() != null ? jogo.getNome() :
+                        jogoEntity.getNome())
+                .plataforma(jogo.getPlataforma() != null ? jogo.getPlataforma() :
+                        jogoEntity.getPlataforma())
+                .genero(jogo.getGenero() != null ? jogo.getGenero() :
+                        jogoEntity.getGenero())
+                .preco(jogo.getPreco() != null ? jogo.getPreco() :
+                        jogoEntity.getPreco())
+                .id(jogoEntity.getId())
+                .build();
+    }
 }

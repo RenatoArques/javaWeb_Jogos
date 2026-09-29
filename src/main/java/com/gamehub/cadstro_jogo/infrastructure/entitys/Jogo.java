@@ -2,6 +2,7 @@ package com.gamehub.cadstro_jogo.infrastructure.entitys;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -11,6 +12,7 @@ import lombok.*;
 @Table(name = "jogo")
 
 public class Jogo {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
@@ -25,5 +27,5 @@ public class Jogo {
     private String genero;
 
     @Column(name = "preco")
-    private double preco;
+    private Double preco;
 }
