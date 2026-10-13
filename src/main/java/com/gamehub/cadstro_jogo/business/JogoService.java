@@ -41,6 +41,7 @@ public class JogoService {
                         jogoEntity.getPreco())
                 .id(jogoEntity.getId())
                 .build();
+        repository.saveAndFlush(jogoAtualizado);
         //novas mudancas
     }
 }
