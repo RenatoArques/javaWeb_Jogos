@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameHub – Cadastro de Jogos</title>
+<style>
+  :root {
+    --bg: #f4f5fb; --surface: #ffffff; --text: #1d1f2b; --muted: #6b7085;
+    --border: #e3e5f0; --primary: #6c5ce7; --primary-hover: #5848d6;
+    --danger: #e5484d; --success: #2da44e; --row-hover: #f8f8fe;
+    --shadow: 0 4px 20px rgba(30, 30, 80, .08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14151f; --surface: #1e2030; --text: #eceef8; --muted: #9a9eb5;
+      --border: #30334a; --primary: #8b7cf6; --primary-hover: #a094f8;
+      --row-hover: #25283b; --shadow: 0 4px 20px rgba(0, 0, 0, .4);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5;
+  }
+  header { padding: 2rem 1rem 1rem; text-align: center; }
+  header h1 { margin: 0; font-size: 1.8rem; }
+  header p { margin: .25rem 0 0; color: var(--muted); }
+  main { max-width: 960px; margin: 0 auto; padding: 1rem; display: grid; gap: 1.25rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; box-shadow: var(--shadow); }
+  .card h2 { margin: 0 0 1rem; font-size: 1.1rem; }
+
+  /* Formulário */
+  form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .9rem; }
+  label { display: grid; gap: .3rem; font-size: .85rem; color: var(--muted); font-weight: 600; }
+  input {
+    padding: .65rem .75rem; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text); font-size: 1rem; width: 100%;
+  }
+  input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+  .form-actions { grid-column: 1 / -1; display: flex; gap: .6rem; flex-wrap: wrap; }
+
+  /* Botões */
+  button {
+    border: 0; border-radius: 8px; padding: .6rem 1rem; font-size: .95rem; font-weight: 600;
+    cursor: pointer; transition: background .15s, transform .05s;
+  }
+  button:active { transform: scale(.97); }
+  button:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-edit { background: rgba(108, 92, 231, .14); color: var(--primary); }
+  .btn-delete { background: rgba(229, 72, 77, .14); color: var(--danger); }
+
+  /* Tabela */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: .75rem .6rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  tbody tr:hover { background: var(--row-hover); }
+  td.actions { display: flex; gap: .4rem; }
+  .state { text-align: center; color: var(--muted); padding: 1.5rem 0; }
+
+  /* Em telas pequenas, cada linha vira um "cartão" */
+  @media (max-width: 640px) {
+    thead { display: none; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    tr { border: 1px solid var(--border); border-radius: 10px; margin-bottom: .8rem; padding: .4rem .6rem; }
+    td { border: 0; display: flex; justify-content: space-between; gap: 1rem; padding: .35rem 0; }
+    td::before { content: attr(data-label); font-weight: 600; color: var(--muted); }
+  }
+
+  /* Mensagens (toasts) */
+  #toasts { position: fixed; top: 1rem; right: 1rem; display: grid; gap: .5rem; z-index: 10; max-width: calc(100% - 2rem); }
+  .toast {
+    padding: .8rem 1.1rem; border-radius: 10px; color: #fff; font-weight: 600;
+    box-shadow: var(--shadow); animation: slide .25s ease-out;
+  }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  @keyframes slide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎮 GameHub</h1>
+  <p>Cadastro de jogos</p>
+</header>
+
+<main>
+  <!-- Formulário: usado tanto para CADASTRAR (POST) quanto para EDITAR (PUT) -->
+  <section class="card">
+    <h2 id="form-title">Novo jogo</h2>
+    <form id="jogo-form">
+      <label>Nome
+        <input type="text" id="nome" required placeholder="Ex.: Zelda">
+      </label>
+      <label>Gênero
+        <input type="text" id="genero" required placeholder="Ex.: Aventura">
+      </label>
+      <label>Plataforma
+        <input type="text" id="plataforma" required placeholder="Ex.: Switch">
+      </label>
+      <label>Preço (R$)
+        <input type="number" id="preco" required min="0" step="0.01" placeholder="0,00">
+      </label>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" id="btn-salvar">Cadastrar</button>
+        <button type="button" class="btn-ghost" id="btn-cancelar" hidden>Cancelar edição</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Tabela com a listagem (GET) -->
+  <section class="card">
+    <h2>Jogos cadastrados</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Nome</th><th>Gênero</th><th>Plataforma</th><th>Preço</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="tabela-corpo"></tbody>
+      </table>
+    </div>
+    <div id="estado" class="state"></div>
+  </section>
+</main>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+/* =====================================================================
+ * CONFIGURAÇÃO
+ * Endereço base da API Java (Spring Boot). Ajuste a porta se necessário.
+ * Se você colocar este arquivo em src/main/resources/static do Spring,
+ * pode usar apenas "/api/jogos" (mesma origem, sem problemas de CORS).
+ * ===================================================================== */
+const API_URL = "http://localhost:8080/api/jogos";
+
+/* Referências do DOM */
+const form       = document.getElementById("jogo-form");
+const tbody      = document.getElementById("tabela-corpo");
+const estado     = document.getElementById("estado");
+const btnSalvar  = document.getElementById("btn-salvar");
+const btnCancel  = document.getElementById("btn-cancelar");
+const formTitle  = document.getElementById("form-title");
+
+/* Guarda o ID do jogo em edição. null = modo "cadastrar". */
+let idEmEdicao = null;
+/* Cache local dos jogos listados (para preencher o formulário ao editar). */
+let jogos = [];
+
+/* ---------------------------------------------------------------------
+ * UTILITÁRIOS
+ * ------------------------------------------------------------------- */
+
+/** Exibe uma mensagem visual temporária (sucesso ou erro). */
+function mostrarMensagem(texto, tipo = "success") {
+  const el = document.createElement("div");
+  el.className = `toast ${tipo}`;
+  el.textContent = texto;
+  document.getElementById("toasts").appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+/** Formata número como moeda brasileira. */
+const formatarPreco = (v) =>
+  Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+/** Escapa HTML para evitar injeção de código ao montar a tabela. */
+function esc(valor) {
+  const d = document.createElement("div");
+  d.textContent = valor ?? "";
+  return d.innerHTML;
+}
+
+/**
+ * Função central de requisição.
+ * IMPORTANTE: o fetch() só rejeita a Promise em falhas de REDE (servidor
+ * desligado, CORS bloqueado...). Respostas 4xx/5xx NÃO geram erro sozinhas,
+ * por isso verificamos `response.ok` manualmente e lançamos um Error.
+ */
+async function requisicao(url, opcoes = {}) {
+  let resposta;
+  try {
+    resposta = await fetch(url, opcoes);
+  } catch (e) {
+    throw new Error("Não foi possível conectar à API. O servidor está rodando?");
+  }
+  if (!resposta.ok) {
+    throw new Error(`Erro ${resposta.status} ao comunicar com a API.`);
+  }
+  // POST/PUT/DELETE do backend respondem sem corpo (ResponseEntity<Void>),
+  // então só fazemos .json() quando existe conteúdo JSON.
+  const tipo = resposta.headers.get("Content-Type") || "";
+  return tipo.includes("application/json") ? resposta.json() : null;
+}
+
+/* ---------------------------------------------------------------------
+ * GET – LISTAR
+ * Verbo GET: apenas LÊ dados, não altera nada no servidor.
+ * Chamado ao abrir a página e depois de cada POST/PUT/DELETE.
+ * ------------------------------------------------------------------- */
+async function carregarJogos() {
+  estado.textContent = "Carregando...";
+  try {
+    jogos = await requisicao(API_URL); // GET é o método padrão do fetch
+    renderizarTabela();
+  } catch (e) {
+    jogos = [];
+    tbody.innerHTML = "";
+    estado.textContent = "Não foi possível carregar os jogos.";
+    mostrarMensagem(e.message, "error");
+  }
+}
+
+/** Monta as linhas da tabela a partir da lista de jogos. */
+function renderizarTabela() {
+  tbody.innerHTML = "";
+  estado.textContent = jogos.length ? "" : "Nenhum jogo cadastrado ainda.";
+
+  jogos.forEach((j) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td data-label="ID">${esc(j.id)}</td>
+      <td data-label="Nome">${esc(j.nome)}</td>
+      <td data-label="Gênero">${esc(j.genero)}</td>
+      <td data-label="Plataforma">${esc(j.plataforma)}</td>
+      <td data-label="Preço">${formatarPreco(j.preco)}</td>
+      <td class="actions">
+        <button class="btn-edit" data-acao="editar" data-id="${j.id}">Editar</button>
+        <button class="btn-delete" data-acao="excluir" data-id="${j.id}">Excluir</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------------------------------------------------------------------
+ * POST / PUT – SALVAR
+ * POST: CRIA um recurso novo (o backend gera o id).
+ * PUT : ATUALIZA um recurso existente, identificado pelo id na URL.
+ * Em ambos enviamos JSON no corpo (body) com o header Content-Type.
+ * ------------------------------------------------------------------- */
+form.addEventListener("submit", async (evento) => {
+  evento.preventDefault(); // evita o recarregamento da página
+
+  // Monta o objeto que será convertido para JSON
+  const jogo = {
+    nome: document.getElementById("nome").value.trim(),
+    genero: document.getElementById("genero").value.trim(),
+    plataforma: document.getElementById("plataforma").value.trim(),
+    preco: parseFloat(document.getElementById("preco").value),
+  };
+
+  const editando = idEmEdicao !== null;
+  // Editando -> PUT /api/jogos/{id} | Cadastrando -> POST /api/jogos
+  const url = editando ? `${API_URL}/${idEmEdicao}` : API_URL;
+  const metodo = editando ? "PUT" : "POST";
+
+  btnSalvar.disabled = true;
+  try {
+    await requisicao(url, {
+      method: metodo,
+      headers: { "Content-Type": "application/json" }, // avisa que o corpo é JSON
+      body: JSON.stringify(jogo),                      // objeto JS -> texto JSON
+    });
+    mostrarMensagem(editando ? "Jogo atualizado com sucesso!" : "Jogo cadastrado com sucesso!");
+    sairDoModoEdicao();
+    await carregarJogos(); // atualiza a tabela automaticamente
+  } catch (e) {
+    mostrarMensagem(e.message, "error");
+  } finally {
+    btnSalvar.disabled = false;
+  }
+});
+
+/* ---------------------------------------------------------------------
+ * DELETE – EXCLUIR
+ * Verbo DELETE: REMOVE o recurso identificado pelo id na URL.
+ * Pedimos confirmação antes para evitar exclusões acidentais.
+ * ------------------------------------------------------------------- */
+async function excluirJogo(id) {
+  const jogo = jogos.find((j) => j.id === id);
+  if (!confirm(`Deseja realmente excluir "${jogo?.nome ?? "este jogo"}"?`)) return;
+
+  try {
+    await requisicao(`${API_URL}/${id}`, { method: "DELETE" });
+    mostrarMensagem("Jogo excluído com sucesso!");
+    if (idEmEdicao === id) sairDoModoEdicao();
+    await carregarJogos(); // atualiza a tabela automaticamente
+  } catch (e) {
+    mostrarMensagem(e.message, "error");
+  }
+}
+
+/* ---------------------------------------------------------------------
+ * MODO DE EDIÇÃO
+ * Ao clicar em "Editar", preenchemos o formulário com os dados da linha.
+ * Ao enviar, o submit acima faz PUT em vez de POST.
+ * ------------------------------------------------------------------- */
+function entrarNoModoEdicao(id) {
+  const j = jogos.find((x) => x.id === id);
+  if (!j) return;
+  idEmEdicao = id;
+  document.getElementById("nome").value = j.nome ?? "";
+  document.getElementById("genero").value = j.genero ?? "";
+  document.getElementById("plataforma").value = j.plataforma ?? "";
+  document.getElementById("preco").value = j.preco ?? "";
+  formTitle.textContent = `Editando jogo #${id}`;
+  btnSalvar.textContent = "Salvar alterações";
+  btnCancel.hidden = false;
+  form.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function sairDoModoEdicao() {
+  idEmEdicao = null;
+  form.reset();
+  formTitle.textContent = "Novo jogo";
+  btnSalvar.textContent = "Cadastrar";
+  btnCancel.hidden = true;
+}
+btnCancel.addEventListener("click", sairDoModoEdicao);
+
+/* Delegação de eventos: um único listener cuida de todos os botões da tabela */
+tbody.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-acao]");
+  if (!btn) return;
+  const id = Number(btn.dataset.id);
+  if (btn.dataset.acao === "editar") entrarNoModoEdicao(id);
+  if (btn.dataset.acao === "excluir") excluirJogo(id);
+});
+
+/* Ao abrir a página: GET inicial para listar os jogos */
+carregarJogos();
+</script>
+</body>
+</html>
